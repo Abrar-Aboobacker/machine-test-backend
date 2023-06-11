@@ -5,6 +5,7 @@ const nodePass = process.env.SMTP_key_value;
 const port = process.env.SMTP_PORT;
 const host = process.env.host;
 let signupData;
+let otp = null;
 const mailer = nodemailer.createTransport({
     host: host,
     port: port,
@@ -60,5 +61,50 @@ module.exports = {
             console.log(error);
             res.status(500).send({ message: "error creating user", success: false });
           }
-        }
+        },
+        resendOtp:async(req,res,next)=>{
+            try {
+                const {userEmail}=req.body
+                const otpEmail = Math.floor(1000 + Math.random() * 9000);
+                otp = otpEmail;
+                sendEmailOTP(userEmail,otpEmail)
+                .then((info) => {
+                  console.log(`Message sent: ${info.messageId}`);
+                  console.log(`Preview URL: ${nodemailer.getTestMessageUrl(info)}`);
+                })
+                .catch((error) => {
+                  throw error;
+                });
+                res.status(200).send({message:'Otp is resend to given email address',success:true})
+            } catch (error) {
+              res.status(500).send({ message: "error while resending otp", success: false });
+            }
+          },
+          postOtp: async (req, res,next) => {
+            // let { name,email,phone,password,cpassword,about,}=signupData
+            const {otpis} = req.body.values
+            try {
+                if(otpis == otp){
+                    let newUser= new usermodel({
+                        name:signupData.name,
+                        email:signupData.email,
+                    })
+                    await newUser.save()
+                    res
+                .status(200)
+                .send({
+                  message: "user created successfully",
+                  success: true,
+                  newUser,
+                });
+                }else{
+                  res.status(500).send({ message: "you entered wrong password", success: false });
+                }
+              
+            } catch (error) {
+              console.log(error);
+              const errors = handleError(error);
+              res.status(400).json({ errors, otpSend: false });
+            }
+          },
 }
