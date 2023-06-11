@@ -3,6 +3,7 @@ if(process.env.NODE_ENV !=='production'){
 }
 const cors = require('cors') ;
 const express = require('express');
+const userRouter = require('./routes/userRouter')
 const dbConfig = require('./config/dbConfig');
 const bodyParser = require("body-parser");
 const app = express()
@@ -14,7 +15,7 @@ app.use(cors({
     methods:["GET","POST"],
     credentials:true,
 }))
-
+app.use('/',userRouter)
 app.use(express.static(__dirname + '/public'));
 
 app.use((err, req, res, next) => {
